@@ -1,15 +1,15 @@
 ;; -*- lexical-binding: t -*-
 (require 'helm)
 (require 'dom)
-(require 'cl)
+(require 'cl-lib)
 
-(defcustom cf-standard-names-table-filename
+(defcustom cf-names-table-filename
   "~/github/ckhroulev/helm-cf-standard-names/cf-standard-name-table.xml.gz"
   "Path to the CF standard names table (an XML document).")
 
-(defun cf-standard-names-parse ()
+(defun cf-names-parse ()
   (let ((xml (with-temp-buffer
-               (insert-file-contents cf-standard-names-table-filename)
+               (insert-file-contents cf-names-table-filename)
                (libxml-parse-xml-region (point-min) (point-max)))))
     (mapcar (lambda (entry)
               (let ((id (dom-attr entry 'id))
@@ -21,17 +21,20 @@
                       id units doc grib amip)))
             (dom-by-tag xml 'entry))))
 
-(defvar cf-standard-names nil)
+(defvar cf-names nil)
+(defun  cf-names () (or cf-names (setf cf-names (cf-names-parse))))
 
-(defun cf-standard-names ()
-  (or cf-standard-names
-      (setf cf-standard-names (cf-standard-names-parse))))
+(defun cf-names-row (a b)
+  "Format a row of the table."
+  `(tr ()
+       (td () (b () ,a))
+       (td () ,(if (string= b "") "empty" b))))
 
-(defun cf-standard-names-display-entry (data)
+(defun cf-names-display-entry (data)
   "Display an entry of the CF standard names table.
 `data' is a list consisting of (name units description grib amip)."
   (multiple-value-bind (id units doc grib amip) data
-   (let ((buffer (get-buffer-create "*cf-standard-names-info*"))
+   (let ((buffer (get-buffer-create "*cf-names-info*"))
          (inhibit-read-only t))
     (with-current-buffer buffer
       (erase-buffer)
@@ -40,27 +43,23 @@
        `(html ()
               (body ()
                     (table ()
-                           (tr () (td () (b () "Name"))        (td () ,id))
-                           (tr () (td () (b () "Units"))       (td () ,units))
-                           (tr () (td () (b () "Description")) (td () ,doc))
-                           (tr () (td () (b () "GRIB"))
-                               (td () ,(if (string= grib "") "empty" grib)))
-                           (tr () (td () (b () "AMIP"))
-                               (td () ,(if (string= amip "") "empty" amip)))
-                           ))))
+                           ,(cf-names-row "Units"       units)
+                           ,(cf-names-row "Description" doc)
+                           ,(cf-names-row "GRIB"        grib)
+                           ,(cf-names-row "AMIP"        amip)))))
       (view-mode nil)))))
 
-(defvar cf-standard-names-source
+(defvar cf-names-source
   (helm-build-sync-source "CF standard names"
-    :candidates #'cf-standard-names
+    :candidates #'cf-names
     :candidate-number-limit 5000 ; about 2800 names at the time of writing
-    :action '(("Display entry" . cf-standard-names-display-entry)
+    :action '(("Display entry" . cf-names-display-entry)
               ("Insert" . (lambda (data) (insert (car data)))))))
 
-(defun cf-standard-names-lookup ()
+(defun cf-names-lookup ()
   "Look up an entry of the CF standard names table using Helm."
   (interactive)
-  (helm :sources cf-standard-names-source
-        :buffer "*cf-standard-names*"))
+  (helm :sources cf-names-source
+        :buffer "*cf-names*"))
 
-(provide 'cf-standard-names)
+(provide 'cf-names)
