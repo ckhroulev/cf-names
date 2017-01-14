@@ -60,7 +60,7 @@ details."
         (display-buffer (current-buffer)) ; shr uses window info to render, so we need to display it
         (shr-insert-document
          `(table ()
-                 (caption nil (b () ,name))
+                 (caption () (b () ,name))
                  (tr)
                  ,(cf-names-row "Units"       units)
                  ,(cf-names-row "Description" description)
