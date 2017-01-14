@@ -1,4 +1,52 @@
-;; -*- lexical-binding: t -*-
+;;; cf-names.el --- Look up CF standard names in Emacs -*- lexical-binding: t -*-
+
+;; Copyright (C) 2017 Constantine Khrulev
+
+;; Author: Constantine Khrulev <ckhroulev@alaska.edu>
+;; URL: http://github.com/ckhroulev/cf-names/
+;; Version: 1.0
+;; Created: 2017-1-13
+;; By: Constantine Khrulev
+;; Keywords: convenience, science
+
+;; COPYRIGHT NOTICE
+;;
+;; This program is free software; you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License as
+;; published by the Free Software Foundation; either version 3 of the
+;; License, or (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful, but
+;; WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+;; General Public License for more details.
+
+;;; Install:
+
+;; To install, put cf-names.el in your load path and add the following
+;; to your .emacs file:
+;;
+;; (require 'cf-names)
+;;
+;; You also need to download the XML standard names table from
+;; http://cfconventions.org/standard-names.html and customize
+;; cf-names-table-filename to point to the downloaded file.
+;;
+;; Once this is done, use M-x cf-names-lookup RET
+;;
+;; to search the table.
+;;
+;; This package requires Helm and Emacs built with libxml.
+;;
+;; Tested using Emacs 25.1.
+
+;;; Commentary:
+
+;; This package simplifies searching the CF standard names table by
+;; creating a Helm source and a function that uses it.
+
+;;; Code:
+
 (require 'helm)
 (require 'dom)
 (require 'cl-lib)
@@ -39,7 +87,10 @@ and AMIP name."
                       id units description grib amip)))
             (dom-by-tag standard-names-table 'entry))))
 
-(defvar cf-names nil)
+(defvar cf-names nil
+  "List of CF standard names. This list does not change very
+  often, so this code does not try to detect changes to the XML
+  standard names table. Set this to `nil' to re-initialize.")
 (defun cf-names ()
   "Return the list of standard names. See `cf-names-init' for
 details."
@@ -78,6 +129,7 @@ details."
               ("Insert standard name" . (lambda (data) (insert (car data))))))
   "Helm CF standard names source.")
 
+;;;###autoload
 (defun cf-names-lookup ()
   "Look up an entry of the CF standard names table using Helm."
   (interactive)
@@ -85,3 +137,4 @@ details."
         :buffer "*cf-names*"))
 
 (provide 'cf-names)
+;; cf-names.el ends here
