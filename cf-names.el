@@ -4,8 +4,13 @@
 (require 'cl-lib)
 
 (defcustom cf-names-table-filename
-  "~/github/ckhroulev/helm-cf-standard-names/cf-standard-name-table.xml.gz"
-  "Path to the CF standard names table (an XML document).")
+  "~/github/ckhroulev/cf-names/cf-standard-name-table.xml"
+  "Path to the CF standard names table in XML. Download the
+  latest version from
+
+  http://cfconventions.org/standard-names.html
+
+  Note that you can gzip this file to save space.")
 
 (defgroup cf-names
   '((cf-names-table-filename custom-variable))
