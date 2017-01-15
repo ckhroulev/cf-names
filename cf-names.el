@@ -87,14 +87,32 @@ and AMIP name."
                       id units description grib amip)))
             (dom-by-tag standard-names-table 'entry))))
 
+
+(defun cf-names-init-aliases ()
+  "Parse the XML CF standard names table and build the alist of
+aliases of CF standard names.
+"
+  (let ((standard-names-table (with-temp-buffer
+                                (insert-file-contents cf-names-table-filename)
+                                (libxml-parse-xml-region (point-min) (point-max)))))
+    (mapcar (lambda (alias)
+              (let ((id   (dom-attr alias 'id))
+                    (name (dom-text (dom-by-tag alias 'entry_id))))
+                (cons id name)))
+            (dom-by-tag standard-names-table 'alias))))
+
+(defvar cf-names-aliases nil)
+
 (defvar cf-names nil
   "List of CF standard names. This list does not change very
   often, so this code does not try to detect changes to the XML
   standard names table. Set this to `nil' to re-initialize.")
+
 (defun cf-names ()
   "Return the list of standard names. See `cf-names-init' for
 details."
-  (or cf-names (setq cf-names (cf-names-init))))
+  (or cf-names (setq cf-names-aliases (cf-names-init-aliases)
+                     cf-names (cf-names-init))))
 
 (defun cf-names-row (a b)
   "Format a row of the table (internal)."
