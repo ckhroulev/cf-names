@@ -1,0 +1,14 @@
+* Introduction
+
+This package simplifies searching the [[http://cfconventions.org/standard-names.html][CF standard names table]] by
+creating a [[https://github.com/emacs-helm/helm][Helm]] source and adding a look up function.
+
+* Installation and use
+
+This package requires Emacs built with =libxml=.
+
+1. Install Helm.
+2. Download the XML CF standard names table from [[http://cfconventions.org/standard-names.html][cfconventions.org]].
+3. Add =(require 'cf-names)= to your =.emacs=.
+4. Customize =cf-names-table-filename= to point to the XML file you downloaded.
+5. Use =M-x cf-names-lookup= to search the table.
