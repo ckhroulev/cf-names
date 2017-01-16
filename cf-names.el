@@ -50,6 +50,7 @@
 (require 'helm)
 (require 'dom)
 (require 'cl-lib)
+(require 'seq)
 
 (defcustom cf-names-table-filename
   "~/github/ckhroulev/cf-names/cf-standard-name-table.xml"
@@ -81,12 +82,8 @@ and AMIP name."
                     (description (dom-text (dom-by-tag entry 'description)))
                     (grib        (dom-text (dom-by-tag entry 'grib)))
                     (amip        (dom-text (dom-by-tag entry 'amip))))
-                (list (format "%s (%s)%s%s" id units
-                              (if (string-empty-p grib) "" (format " grib: '%s'" grib))
-                              (if (string-empty-p amip) "" (format " amip: '%s'" amip)))
-                      id units description grib amip)))
+                (list id units description grib amip)))
             (dom-by-tag standard-names-table 'entry))))
-
 
 (defun cf-names-init-aliases ()
   "Parse the XML CF standard names table and build the alist of
@@ -101,24 +98,49 @@ aliases of CF standard names.
                 (cons id name)))
             (dom-by-tag standard-names-table 'alias))))
 
-(defvar cf-names-aliases nil)
+(defun cf-names-init-candidates ()
+  "Build the list of Helm candidates for CF standard name lookup."
+  (append
+   (mapcar
+    (lambda (entry)
+      (cl-multiple-value-bind (id units description grib amip) entry
+        (cons (format "%s (%s)%s%s" id units
+                      (if (string-empty-p grib) "" (format " grib: '%s'" grib))
+                      (if (string-empty-p amip) "" (format " amip: '%s'" amip)))
+              id)))
+    cf-names)
+   (mapcar (lambda (alias) (cons (format "%s (alias)" (car alias)) (car alias)))
+           cf-names-aliases)))
 
 (defvar cf-names nil
   "List of CF standard names. This list does not change very
   often, so this code does not try to detect changes to the XML
   standard names table. Set this to `nil' to re-initialize.")
 
-(defun cf-names ()
+(defvar cf-names-aliases nil
+  "An alist mapping aliases of CF standard names to corresponding names.")
+
+(defvar cf-names-candidates nil
+  "Helm candidates for the CF standard name and alias lookup.")
+
+(defun cf-names-candidates ()
   "Return the list of standard names. See `cf-names-init' for
 details."
-  (or cf-names (setq cf-names-aliases (cf-names-init-aliases)
-                     cf-names (cf-names-init))))
+  (or (and cf-names cf-names-aliases cf-names-candidates)
+      (setq cf-names (cf-names-init)
+            cf-names-aliases (cf-names-init-aliases)
+            cf-names-candidates (cf-names-init-candidates))))
 
 (defun cf-names-row (a b)
   "Format a row of the table (internal)."
   `(tr ()
        (td () (b () ,a))
        (td () ,(if (string-empty-p b) "empty" b))))
+
+(defun cf-names-display (data)
+  "Display documentation of a standard name or an alias."
+  (cf-names-display-entry (or (assoc data cf-names)
+                              (assoc (cdr (assoc data cf-names-aliases)) cf-names))))
 
 (defun cf-names-display-entry (data)
   "Display an entry of the CF standard names table.
@@ -136,14 +158,16 @@ details."
                  ,(cf-names-row "Units"       units)
                  ,(cf-names-row "Description" description)
                  ,(cf-names-row "GRIB"        grib)
-                 ,(cf-names-row "AMIP"        amip)))
-        (view-mode nil)))))
+                 ,(cf-names-row "AMIP"        amip)
+                 ,@(mapcar (lambda (a) (cf-names-row "Alias" (car a)))
+                           (seq-filter (lambda (s) (string= (cdr s) id)) cf-names-aliases))))))
+    (view-mode nil)))
 
 (defvar cf-names-source
   (helm-build-sync-source "CF standard names"
-    :candidates #'cf-names
-    :candidate-number-limit 5000 ; about 2800 names at the time of writing
-    :action '(("Display entry" . cf-names-display-entry)
+    :candidates #'cf-names-candidates
+    :candidate-number-limit 500
+    :action '(("Display entry" . cf-names-display)
               ("Insert standard name" . (lambda (data) (insert (car data))))))
   "Helm CF standard names source.")
 
