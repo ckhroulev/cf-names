@@ -168,7 +168,7 @@ details."
     :candidates #'cf-names-candidates
     :candidate-number-limit 500
     :action '(("Display entry" . cf-names-display)
-              ("Insert standard name" . (lambda (data) (insert (car data))))))
+              ("Insert standard name" . insert)))
   "Helm CF standard names source.")
 
 ;;;###autoload
