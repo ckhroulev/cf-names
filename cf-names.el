@@ -160,8 +160,8 @@ details."
                  ,(cf-names-row "GRIB"        grib)
                  ,(cf-names-row "AMIP"        amip)
                  ,@(mapcar (lambda (a) (cf-names-row "Alias" (car a)))
-                           (seq-filter (lambda (s) (string= (cdr s) id)) cf-names-aliases))))))
-    (view-mode nil)))
+                           (seq-filter (lambda (s) (string= (cdr s) id)) cf-names-aliases))))
+        (view-mode nil)))))
 
 (defvar cf-names-source
   (helm-build-sync-source "CF standard names"
